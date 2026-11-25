@@ -1360,7 +1360,8 @@ $("#bookingForm").addEventListener("submit",function(e){
   var waText=currentSummary+"\n\nHi! I've just booked my bat in on your website. I'm attaching my bat photos in this chat now.";
   $("#waBtn").href="https://wa.me/"+CONFIG.whatsappNumber+"?text="+encodeURIComponent(waText);
   if(emailOK){
-   $("#mailBtn").href="https://mail.google.com/mail/?view=cm&fs=1&to="+encodeURIComponent(CONFIG.email)+"&su="+encodeURIComponent("Bat booking "+currentRef+" - "+val("#fullName"))+"&body="+encodeURIComponent(currentSummary+"\n\n(I'll send my bat photos in a follow-up message.)"); $("#mailBtn").target="_blank";
+    $("#mailBtn").href="https://mail.google.com/mail/?view=cm&fs=1&to="+encodeURIComponent(CONFIG.email)+"&su="+encodeURIComponent("Bat booking "+currentRef+" - "+val("#fullName"))+"&body="+encodeURIComponent(currentSummary+"\n\n(I'll send my bat photos in a follow-up message.)"); $("#mailBtn").target="_blank";
+  }
 
   $("#bookingPage").style.display="none";
   $("#confirmation").style.display="block";
