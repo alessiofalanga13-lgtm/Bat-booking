@@ -496,7 +496,7 @@ footer b{font-family:var(--serif);color:#fff;font-size:1.1rem;display:block;marg
       <p class="lead">Tap a code to apply it to your booking. You always get whichever discount saves you the most.</p>
     </div>
     <div class="offers" id="offersGrid"></div>
-    <p class="fineprint">Discounts don't stack. One promo code per booking. Add-ons are included when your total is calculated.</p>
+    <p class="fineprint">Discounts don't stack. One promo code per customer: we check your email when you book. Add-ons are included when your total is calculated.</p>
   </div>
 </section>
 
@@ -528,6 +528,13 @@ footer b{font-family:var(--serif);color:#fff;font-size:1.1rem;display:block;marg
             <span class="help">So we can message you updates, photos, and arrange pick-up/drop-off.</span>
             <input type="tel" id="phone" inputmode="tel" autocomplete="tel" placeholder="e.g., 04XX XXX XXX">
             <div class="error-msg">Please enter a valid mobile number (digits only, 8 or more).</div>
+          </div>
+
+          <div class="field" data-field="email">
+            <label class="q" for="email">Email Address<span class="optt">Needed only if you use a promo code</span></label>
+            <span class="help">Promo codes are one per customer, so we use your email to check. We only use it for your booking.</span>
+            <input type="text" id="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="you@example.com">
+            <div class="error-msg" id="emailErr">Please enter a valid email address to use a promo code.</div>
           </div>
 
           <div class="field" data-field="age">
@@ -649,7 +656,7 @@ footer b{font-family:var(--serif);color:#fff;font-size:1.1rem;display:block;marg
 
           <div class="field">
             <label class="q" for="promoInput">Promo Code<span class="optt">Optional</span></label>
-            <span class="help">Got a code? Enter it here and hit Apply.</span>
+            <span class="help">Got a code? Enter it here and hit Apply. You'll need to add your email in Section 1 (one promo per customer).</span>
             <div class="promo-row">
               <input type="text" id="promoInput" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ENTER CODE">
               <button type="button" class="btn btn-green" id="promoApply">Apply</button>
@@ -757,7 +764,7 @@ footer b{font-family:var(--serif);color:#fff;font-size:1.1rem;display:block;marg
       <details class="reveal"><summary>What if my bat has serious damage?</summary><p>Severe cleft cracks or broken handles are quoted separately after we check your photos.</p></details>
       <details class="reveal"><summary>I'm under 18. Can I book?</summary><p>Yes. Please make sure a parent/guardian is aware of the booking. You'll be asked to confirm this before you submit.</p></details>
       <details class="reveal"><summary>Can I book more than one bat?</summary><p>Yes. Set the number of bats in the form. Booking 3 or more together applies the Club/Mate Bundle: 10% off your total.</p></details>
-      <details class="reveal"><summary>How do promo codes work?</summary><p>Enter a code in the booking form and hit Apply, or tap a code in the offers section. One code per booking, and discounts don't stack: you automatically get whichever saves you the most.</p></details>
+      <details class="reveal"><summary>How do promo codes work?</summary><p>Enter a code in the booking form and hit Apply, or tap a code in the offers section. One promo per customer (we check your email), and discounts don't stack: you automatically get whichever saves you the most.</p></details>
       <details class="reveal"><summary>What does the knocking-in advice cover?</summary><p>With the Repair &amp; Protect and Full Rebuild packages, we'll give you advice on caring for and knocking in your bat when you get it back.</p></details>
     </div>
   </div>
@@ -1124,6 +1131,7 @@ function needGuardian(){var a=radio("age");return a==="Under 16"||a==="16 – 17
 var RULES={
   name:function(){return val("#fullName").length>=2},
   phone:function(){var v=val("#phone"),d=v.replace(/\D/g,"");return /^[0-9+()\-\s]+$/.test(v)&&d.length>=8&&d.length<=15},
+  email:function(){var v=val("#email");if(!v)return !appliedCode;return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)},
   age:function(){return !!$("input[name=age]:checked")},
   suburb:function(){return val("#suburb").length>=2},
   logistics:function(){return !!$("input[name=logistics]:checked")},
@@ -1138,6 +1146,7 @@ var RULES={
 function ruleKeys(){
   var k=["name","phone","age","suburb","logistics","brand","willow","size","pkg","issues","payack"];
   if(needGuardian()) k.push("guardian");
+  if(appliedCode||val("#email")) k.push("email");
   return k;
 }
 function fieldEl(n){return $("[data-field="+n+"]")}
@@ -1311,6 +1320,7 @@ function buildSummary(ref){
   L.push("--- CUSTOMER ---");
   L.push("Name: "+val("#fullName"));
   L.push("WhatsApp / Mobile: "+val("#phone"));
+  L.push("Email: "+(val("#email")||"Not given"));
   L.push("Age group: "+radio("age")+(needGuardian()?" (parent/guardian aware: yes)":""));
   L.push("Suburb: "+val("#suburb"));
   L.push("Pick-up / Drop-off: "+radio("logistics"));
@@ -1334,9 +1344,30 @@ function buildSummary(ref){
   L.push("--- PRICE ---");
   if(c.discount>0) L.push("Subtotal: "+money(c.subtotal)+"\nDiscount: "+c.discLabel+" -"+money(c.discount));
   L.push("TOTAL: "+(c.pkg==="unsure"?"Package to be quoted"+(c.total>0?" + "+money(c.total)+" add-ons":""):money(c.total)+" AUD"));
-  if(appliedCode && c.promo.state!=="ok") L.push("Promo code entered: "+appliedCode);
+  if(appliedCode) L.push("Promo code: "+appliedCode+(usingPromo(c)?" (applied)":" (entered, not applied)"));
   L.push("Payment: In person on handover (no online payment)");
   return L.join("\n");
+}
+
+/* ---------- One promo per customer ---------- */
+var PROMO_STORE="batPromoUsed_v1", sessionPromoEmail="";
+function promoState(){
+  try{var d=JSON.parse(localStorage.getItem(PROMO_STORE)||"{}");return {used:d.used||[],device:!!d.device}}catch(e){return {used:[],device:false}}
+}
+function savePromoState(st){try{localStorage.setItem(PROMO_STORE,JSON.stringify(st))}catch(e){}}
+function usingPromo(c){return c.discLabel.indexOf("Promo")===0}
+function promoBlocked(c){
+  if(!usingPromo(c)) return false;
+  var em=val("#email").toLowerCase();
+  if(em===sessionPromoEmail) return false;
+  var st=promoState();
+  return st.device||st.used.indexOf(em)>-1;
+}
+function recordPromo(c){
+  if(!usingPromo(c)) return;
+  var em=val("#email").toLowerCase(), st=promoState();
+  if(st.used.indexOf(em)<0) st.used.push(em);
+  st.device=true; savePromoState(st); sessionPromoEmail=em;
 }
 
 /* ---------- Submit ---------- */
@@ -1351,6 +1382,15 @@ $("#bookingForm").addEventListener("submit",function(e){
   e.preventDefault();
   if($("#hp").value) return;
   if(!validate()) return;
+  var cc=calc();
+  if(promoBlocked(cc)){
+    $("#emailErr").textContent="A promo code has already been used with this email or on this device. Remove the code to continue, or message us on WhatsApp.";
+    setErr("email",true);
+    fieldEl("email").scrollIntoView({behavior:"smooth",block:"center"});
+    return;
+  }
+  $("#emailErr").textContent="Please enter a valid email address to use a promo code.";
+  recordPromo(cc);
 
   currentRef=makeRef();
   currentSummary=buildSummary(currentRef);
@@ -1378,6 +1418,7 @@ $("#bookingForm").addEventListener("submit",function(e){
         from_name:CONFIG.businessName+" Website",
         name:val("#fullName"),
         phone:val("#phone"),
+        email:val("#email")||undefined,
         message:currentSummary
       })
     }).then(function(r){return r.json()}).then(function(j){
@@ -1408,6 +1449,7 @@ $("#copyBtn").addEventListener("click",function(){copyText(currentSummary,functi
 $("#printBtn").addEventListener("click",function(){window.print()});
 $("#editBtn").addEventListener("click",function(){showBooking();window.scrollTo({top:$("#book").offsetTop-70})});
 $("#newBtn").addEventListener("click",function(){
+  sessionPromoEmail="";
   clearDraft();
   $("#bookingForm").reset(); appliedCode=""; qty=1; $("#qVal").textContent=1;
   photos.forEach(function(p){URL.revokeObjectURL(p.url)}); photos=[]; renderPhotos();
