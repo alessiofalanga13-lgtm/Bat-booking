@@ -1042,7 +1042,7 @@ $("#promoInput").addEventListener("keydown",function(e){if(e.key==="Enter"){e.pr
   var g=$("#offersGrid");
   Object.keys(CONFIG.promos).forEach(function(code){
     var p=CONFIG.promos[code];
-    var d=document.createElement("div"); d.className="offer reveal";
+    var d=document.createElement("div"); d.className="offer reveal in";
     d.innerHTML='<span class="tag">Promo code</span><h3></h3><p></p><div class="codebox"><code></code><button type="button" class="btn btn-gold btn-sm">Use code</button></div>';
     d.querySelector("h3").textContent=p.title;
     d.querySelector("p").textContent=p.desc;
@@ -1056,7 +1056,7 @@ $("#promoInput").addEventListener("keydown",function(e){if(e.key==="Enter"){e.pr
     });
     g.appendChild(d);
   });
-  var a=document.createElement("div"); a.className="offer auto reveal";
+  var a=document.createElement("div"); a.className="offer auto reveal in";
   a.innerHTML='<span class="tag">Automatic</span><h3>Club/Mate Bundle</h3><p>Book 3 or more bats together and 10% comes off your total automatically. No code needed.</p><div class="codebox"><span>Applied for you</span></div>';
   g.appendChild(a);
 })();
@@ -1360,8 +1360,7 @@ $("#bookingForm").addEventListener("submit",function(e){
   var waText=currentSummary+"\n\nHi! I've just booked my bat in on your website. I'm attaching my bat photos in this chat now.";
   $("#waBtn").href="https://wa.me/"+CONFIG.whatsappNumber+"?text="+encodeURIComponent(waText);
   if(emailOK){
-    $("#mailBtn").href="mailto:"+CONFIG.email+"?subject="+encodeURIComponent("Bat booking "+currentRef+" - "+val("#fullName"))+"&body="+encodeURIComponent(currentSummary+"\n\n(I'll send my bat photos in a follow-up message.)");
-  }
+   $("#mailBtn").href="https://mail.google.com/mail/?view=cm&fs=1&to="+encodeURIComponent(CONFIG.email)+"&su="+encodeURIComponent("Bat booking "+currentRef+" - "+val("#fullName"))+"&body="+encodeURIComponent(currentSummary+"\n\n(I'll send my bat photos in a follow-up message.)"); $("#mailBtn").target="_blank";
 
   $("#bookingPage").style.display="none";
   $("#confirmation").style.display="block";
@@ -1427,7 +1426,7 @@ $("#askWa").addEventListener("click",function(){
 });
 $("#askMail").addEventListener("click",function(){
   if(!askValid()) return;
-  window.location.href="mailto:"+CONFIG.email+"?subject="+encodeURIComponent("Question from "+val("#askName"))+"&body="+encodeURIComponent(askText());
+  window.open("https://mail.google.com/mail/?view=cm&fs=1&to="+encodeURIComponent(CONFIG.email)+"&su="+encodeURIComponent("Question from "+val("#askName"))+"&body="+encodeURIComponent(askText()),"_blank","noopener");
 });
 ["#askName","#askMsg"].forEach(function(s){$(s).addEventListener("input",function(){this.closest(".field").classList.remove("invalid")})});
 
